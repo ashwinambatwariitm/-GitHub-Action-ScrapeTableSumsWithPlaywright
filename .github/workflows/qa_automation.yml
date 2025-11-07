@@ -1,34 +1,33 @@
-# .github/workflows/qa_automation.yml
-
-name: DataDash Automated QA with Playwright
+name: Sum JS Tables
 
 on:
-    push:
-        branches: [ "main" ]
-    workflow_dispatch:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
 
 jobs:
-    playwright_qa_test:
-        name: Run Playwright Scraper
-        runs-on: ubuntu-latest
-        
-        steps:
-            - name: 📧 Set up Environment and Email Identifier 24f2009283@ds.study.iitm.ac.in
-              uses: actions/checkout@v4
-              
-            - name: Set up Node.js
-              uses: actions/setup-node@v4
-              with:
-                  node-version: '20'
+  run-sum:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
 
-            - name: Create package.json
-              run: echo "{\"name\": \"datadash-qa\", \"version\": \"1.0.0\"}" > package.json
+      - name: Use Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
 
-            - name: Install Playwright npm Package
-              run: npm install playwright
-              
-            - name: Install Playwright Browser Dependencies
-              run: npx playwright install --with-deps chromium
+      - name: Install dependencies
+        run: |
+          npm ci || npm i
 
-            - name: Execute Playwright Scraper
-              run: node scraper.js
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps
+
+      - name: Run sum script — 24f2009283@ds.study.iitm.ac.in
+        run: npm run sum:tables
+
+      - name: Display logs tail
+        if: always()
+        run: |
+          echo "If GRAND_TOTAL is above, parsing succeeded."
