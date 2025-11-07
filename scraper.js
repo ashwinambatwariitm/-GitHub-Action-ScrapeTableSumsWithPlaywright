@@ -1,76 +1,44 @@
-// scraper.js
+import { chromium } from "@playwright/test";
 
-const { chromium } = require('playwright');
+const seeds = [39,40,41,42,43,44,45,46,47,48];
+const urls = seeds.map(s => `https://sanand0.github.io/tdsdata/js_table/?seed=${s}`);
 
-// --- Configuration ---
-// UPDATED with the correct base URL structure
-const BASE_URL = 'https://sanand0.github.io/tdsdata/js_table/?seed='; 
-const SEEDS = [39, 40, 41, 42, 43, 44, 45, 46, 47, 48];
-// ---------------------
-
-async function runScraper() {
-    let grandTotal = 0;
-    
-    // Launch a headless browser
-    const browser = await chromium.launch();
-    const page = await browser.newPage();
-
-    console.log('Starting DataDash QA Automation...');
-
-    for (const seed of SEEDS) {
-        const url = `${BASE_URL}${seed}`;
-        console.log(`\n--- Processing Seed ${seed} (${url}) ---`);
-        
-        try {
-            // Navigate to the page and wait for the DOM to be ready
-            const response = await page.goto(url, { waitUntil: 'domcontentloaded' });
-            
-            if (response.status() !== 200) {
-                console.error(`ERROR: Could not load ${url}. Status: ${response.status()}`);
-                continue;
-            }
-
-            // Wait for the dynamically loaded table data (assuming a short wait is enough)
-            await page.waitForTimeout(1000); 
-
-            // A Playwright locator to target all table cells (td or th) that contain text
-            // The selector 'table * :is(td, th):not(:empty)' targets any non-empty td or th inside a table.
-            const numberCells = page.locator('table * :is(td, th):not(:empty)');
-            
-            // Get all text contents from the selected cells
-            const cellTexts = await numberCells.allTextContents();
-            
-            let seedTotal = 0;
-            let numbersFound = 0;
-
-            for (const text of cellTexts) {
-                // Clean the text: remove commas and trim whitespace, then parse as float
-                const numberMatch = text.replace(/[$,\s]/g, ''); 
-                const number = parseFloat(numberMatch);
-
-                if (!isNaN(number)) {
-                    seedTotal += number;
-                    numbersFound++;
-                }
-            }
-
-            console.log(`Found ${numbersFound} valid numbers. Seed Total: ${seedTotal.toFixed(2)}`);
-            grandTotal += seedTotal;
-
-        } catch (error) {
-            console.error(`An error occurred while processing seed ${seed}:`, error.message);
-        }
-    }
-
-    await browser.close();
-
-    // Print the final required total to the logs
-    console.log('\n=======================================');
-    console.log(`✅ FINAL GRAND TOTAL: ${grandTotal.toFixed(2)}`);
-    console.log('=======================================');
+function extractNumbers(text: string): number[] {
+  // Match integers or decimals, with optional sign and thousand separators
+  const re = /[-+]?(?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?/g;
+  const matches = text.match(re) ?? [];
+  return matches.map(m => Number(m.replace(/,/g, ""))).filter(n => Number.isFinite(n));
 }
 
-runScraper().catch(error => {
-    console.error('The scraper failed to complete:', error);
+(async () => {
+  const browser = await chromium.launch({ headless: true });
+  const page = await browser.newPage();
+
+  let grandTotal = 0;
+
+  for (const url of urls) {
+    await page.goto(url, { waitUntil: "networkidle", timeout: 120_000 });
+    // Wait for any table to appear (pages are JS-generated)
+    await page.waitForSelector("table", { timeout: 60_000 });
+
+    const pageText = await page.evaluate(() => {
+      // Gather text only from tables to avoid counting numbers elsewhere
+      const tables = Array.from(document.querySelectorAll("table"));
+      return tables.map(t => t.innerText).join("\n");
+    });
+
+    const nums = extractNumbers(pageText);
+    const pageSum = nums.reduce((a, b) => a + b, 0);
+    console.log(`Sum for ${url}: ${pageSum}`);
+    grandTotal += pageSum;
+  }
+
+  console.log(`GRAND_TOTAL=${grandTotal}`);
+  await browser.close();
+
+  // Exit non-zero if nothing was found to surface issues
+  if (!Number.isFinite(grandTotal)) {
+    console.error("No numbers found or invalid total");
     process.exit(1);
-});
+  }
+})();
