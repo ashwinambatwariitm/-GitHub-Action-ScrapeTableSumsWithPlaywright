@@ -4,7 +4,7 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "sum:tables": "tsx scraper.js"
+    "sum:tables": "tsx scripts/sum-tables.ts"
   },
   "devDependencies": {
     "@playwright/test": "^1.48.0",
