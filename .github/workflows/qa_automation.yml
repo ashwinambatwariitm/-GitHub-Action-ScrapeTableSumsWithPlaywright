@@ -1,0 +1,34 @@
+# .github/workflows/qa_automation.yml
+
+name: DataDash Automated QA with Playwright
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+jobs:
+  playwright_qa_test:
+    name: Run Playwright Scraper
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: 📧 Set up Environment and Email Identifier 24f2009283@ds.study.iitm.ac.in
+      uses: actions/checkout@v4
+      
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+
+    # Install the Playwright browsers required for the script
+    - name: Install Playwright Dependencies
+      run: npm install playwright && npx playwright install --with-deps chromium
+
+    # Create a dummy package.json to avoid 'npm install' warnings
+    - name: Create package.json
+      run: echo '{"name": "datadash-qa", "version": "1.0.0"}' > package.json
+
+    # Run the main scraper script
+    - name: Execute Playwright Scraper
+      run: node scraper.js
