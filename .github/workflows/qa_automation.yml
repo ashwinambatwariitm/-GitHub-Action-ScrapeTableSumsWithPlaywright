@@ -11,29 +11,30 @@ jobs:
   playwright_qa_test:
     name: Run Playwright Scraper
     runs-on: ubuntu-latest
-
+    
     steps:
-      # Required step with email identifier
-      - name: 📧 Set up Environment and Email Identifier 24f2009283@ds.study.iitm.ac.in
-        uses: actions/checkout@v4
+    # Required step with email identifier (Line 15)
+    - name: 📧 Set up Environment and Email Identifier 24f2009283@ds.study.iitm.ac.in
+      uses: actions/checkout@v4
+      
+    # Set up Node.js
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
+    # Create a dummy package.json (Ensures npm install runs cleanly)
+    - name: Create package.json
+      #run: echo '{"name": "datadash-qa", "version": "1.0.0"}' > package.json
 
-      # Step 3: Create package.json
-      - name: Create package.json
-        run: echo '{"name": "datadash-qa", "version": "1.0.0"}' > package.json
+    # Install Playwright npm Package
+    - name: Install Playwright npm Package
+      run: npm install playwright
+      
+    # Install Playwright browser dependencies (Chromium)
+    - name: Install Playwright Browser Dependencies
+      run: npx playwright install --with-deps chromium
 
-      # Install Playwright npm Package
-      - name: Install Playwright npm Package
-        run: npm install playwright
-
-      # Install Playwright browser dependencies (Chromium)
-      - name: Install Playwright Browser Dependencies
-        run: npx playwright install --with-deps chromium
-
-      # Run the main scraper script
-      - name: Execute Playwright Scraper
-        run: node scraper.js
+    # Run the main scraper script
+    - name: Execute Playwright Scraper
+      run: node scraper.js
