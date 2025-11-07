@@ -22,7 +22,7 @@ jobs:
                   node-version: '20'
 
             - name: Create package.json
-              run: echo '{"name": "datadash-qa", "version": "1.0.0"}' > package.json
+              run: echo "{\"name\": \"datadash-qa\", \"version\": \"1.0.0\"}" > package.json
 
             - name: Install Playwright npm Package
               run: npm install playwright
